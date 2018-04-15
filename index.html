@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <title>Atividade 1 (A1)</title>
+        <meta charset="utf-8">
+        
+        <style>
+        </style>
+    </head>
+    
+    <body>
+        <div id="cena"></div>
+        
+        <script src="js/three.js"></script>
+        <script src="js/OBJLoader.js"></script>
+        
+        <!-- Shaders -->
+        <script type="x-shader/x-vertex" id="vertexshader">
+            void main(){
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" id="fragmentshader">
+            void main(){
+                gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+            }
+        </script>
+        
+        <!-- Configurações de Cena e Renderização -->
+        <script>
+            //Chamada dos shaders explícitos
+            var shaderMaterial = new THREE.ShaderMaterial({
+                vertexShader:   document.getElementById('vertexshader').textContent,
+                fragmentShader: document.getElementById('fragmentshader').textContent,
+            });
+            
+            // ------------- CENA -------------
+            
+            //Configura o tamanho da cena
+            var WIDTH=600,
+                HEIGHT=400;
+            
+            //Cria uma nova cena
+            var cena = new THREE.Scene();
+            
+            // ------------ OBJETO -------------
+            
+            //Instancia um objeto para carregar o arquivo .obj
+            var loader = new THREE.OBJLoader();
+            
+            //Carrega o objeto para a cena
+            loader.load("pumba/pumba.obj", function(object){
+                cena.add(object);
+            });
+            
+            // ------------ RENDERER ------------
+            
+            //Renderer do OpenGL
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize(WIDTH, HEIGHT);
+            
+            //Captura o elemento do HTML onde será inserida a cena
+            var scene = document.getElementById("cena");
+            
+            //Adiciona o renderer ao elemento HTML
+            scene.appendChild(renderer.domElement);
+            
+            //Renderiza a cena
+            renderer.render(cena);
+        </script>
+    </body>
+</html>
