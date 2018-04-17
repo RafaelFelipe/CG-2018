@@ -23,7 +23,7 @@
 
         <script type="x-shader/x-fragment" id="fragmentshader">
             void main(){
-                gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+                gl_FragColor = vec4(0.6,0.0,0.0,1.0);
             }
         </script>
         
@@ -44,6 +44,32 @@
             //Cria uma nova cena
             var cena = new THREE.Scene();
             
+            //Iluminação da cena
+            var ilumCena = new THREE.AmbientLight(0xbbbbbb, 0.4);
+            cena.add(ilumCena);
+            
+            //Configuração de câmera
+            var VIEW_ANGLE = 45,
+                ASPECT = WIDTH / HEIGHT,
+                NEAR = 1,
+                FAR = 1000;
+            var cam = new THREE.PerspectiveCamera(
+                      VIEW_ANGLE,
+                      ASPECT,
+                      NEAR,
+                      FAR);
+            
+            //Adiciona ponto de luz na câmera
+            var ilumCam = new THREE.PointLight(0xffffff, 0.7);
+            cam.add (ilumCam);
+            cam.lookAt(cena.position);
+            
+            //A câmera começa em 0,0,0. Posiciona a câmera em uma certa profundidade
+            cam.position.z = 300;
+            
+            //Adiciona a câmera à cena
+            cena.add(cam);
+
             // ------------ OBJETO -------------
             
             //Instancia um objeto para carregar o arquivo .obj
@@ -67,7 +93,7 @@
             scene.appendChild(renderer.domElement);
             
             //Renderiza a cena
-            renderer.render(cena);
+            renderer.render(cena, cam);
         </script>
     </body>
 </html>
