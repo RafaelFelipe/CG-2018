@@ -77,6 +77,23 @@
             
             //Carrega o objeto para a cena
             loader.load("Objetos/Pumba/pumba.obj", function(object){
+                
+                //Aplica os shaders configurados em cada vértice do objeto
+                object.traverse(function (child) {
+					if (child instanceof THREE.Mesh) {
+						child.material = shaderMaterial;//aplica o material em cada vertice do objeto
+					}
+				});
+                
+                //Configura a posição e escala do objeto
+                object.position.x = -10;
+                object.position.y = 10;
+                object.position.z = -50;
+                object.scale.x = 50;
+                object.scale.y = 50;
+                object.scale.z = 50;
+                obj = object;
+                
                 cena.add(object);
             });
             
@@ -94,6 +111,14 @@
             
             //Renderiza a cena
             renderer.render(cena, cam);
+            
+            //Animação de rotação sobre o eixo y
+            function animate() {
+				requestAnimationFrame( animate );
+				obj.rotation.y -= 0.05;
+				renderer.render( cena, cam );
+			}
+			animate();
         </script>
     </body>
 </html>
