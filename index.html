@@ -13,6 +13,8 @@
         
         <script src="js/three.js"></script>
         <script src="js/OBJLoader.js"></script>
+	<script src="js/MTLLoader.js"></script>
+        <script src="js/DDSLoader.js"></script>
         
         <!-- Shaders -->
         <script type="x-shader/x-vertex" id="vertexshader">
@@ -48,6 +50,7 @@
             var ilumCena = new THREE.AmbientLight(0xbbbbbb, 0.4);
             cena.add(ilumCena);
             
+	    cena.background = new THREE.Color(0xf0f0f0);
             //Configuração de câmera
             var VIEW_ANGLE = 45,
                 ASPECT = WIDTH / HEIGHT,
@@ -71,30 +74,33 @@
             cena.add(cam);
 
             // ------------ OBJETO -------------
+            var obj;
+            
+            THREE.Loader.Handlers.add(/\.dds$/i, new THREE.DDSLoader());
             
             //Instancia um objeto para carregar o arquivo .obj
-            var loader = new THREE.OBJLoader();
-            
-            //Carrega o objeto para a cena
-            loader.load("Objetos/Pumba/pumba.obj", function(object){
-                
-                //Aplica os shaders configurados em cada vértice do objeto
-                object.traverse(function (child) {
-					if (child instanceof THREE.Mesh) {
-						child.material = shaderMaterial;//aplica o material em cada vertice do objeto
-					}
-				});
-                
-                //Configura a posição e escala do objeto
-                object.position.x = -10;
-                object.position.y = 10;
-                object.position.z = -50;
-                object.scale.x = 50;
-                object.scale.y = 50;
-                object.scale.z = 50;
-                obj = object;
-                
-                cena.add(object);
+            var mtlLoader = new THREE.MTLLoader();
+            mtlLoader.setPath('Objetos/Pumba/');
+            mtlLoader.load("pumba.mtl", function(materials) {
+
+                materials.preload();
+                //Carrega o objeto para a cena
+                var objLoader = new THREE.OBJLoader();
+                objLoader.setMaterials(materials);
+                objLoader.setPath('Objetos/Pumba/');
+                objLoader.load("pumba.obj", function(object){
+                    
+                    //Configura a posição e escala do objeto
+                    object.position.x = -10;
+                    object.position.y = 10;
+                    object.position.z = -50;
+                    object.scale.x = 50;
+                    object.scale.y = 50;
+                    object.scale.z = 50;
+                    obj = object;
+
+                    cena.add(object);
+                });
             });
             
             // ------------ RENDERER ------------
