@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
     <head>
-        <title>Atividade 1 (A1)</title>
+        <title>Teste - Pumba</title>
         <meta charset="utf-8">
         
         <style>
@@ -13,7 +13,7 @@
         
         <script src="js/three.js"></script>
         <script src="js/OBJLoader.js"></script>
-	<script src="js/MTLLoader.js"></script>
+        <script src="js/MTLLoader.js"></script>
         <script src="js/DDSLoader.js"></script>
         
         <!-- Shaders -->
@@ -40,17 +40,18 @@
             // ------------- CENA -------------
             
             //Configura o tamanho da cena
-            var WIDTH=600,
-                HEIGHT=400;
+            var WIDTH=window.innerWidth,
+                HEIGHT=window.innerHeight;
             
             //Cria uma nova cena
             var cena = new THREE.Scene();
-            
+
             //Iluminação da cena
             var ilumCena = new THREE.AmbientLight(0xbbbbbb, 0.4);
             cena.add(ilumCena);
             
-	    cena.background = new THREE.Color(0xf0f0f0);
+            cena.background = new THREE.Color(0xf0f0f0);
+            
             //Configuração de câmera
             var VIEW_ANGLE = 45,
                 ASPECT = WIDTH / HEIGHT,
@@ -72,7 +73,7 @@
             
             //Adiciona a câmera à cena
             cena.add(cam);
-
+            
             // ------------ OBJETO -------------
             var obj;
             
@@ -102,7 +103,7 @@
                     cena.add(object);
                 });
             });
-            
+
             // ------------ RENDERER ------------
             
             //Renderer do OpenGL
@@ -120,9 +121,9 @@
             
             //Animação de rotação sobre o eixo y
             function animate() {
-				requestAnimationFrame( animate );
+				requestAnimationFrame(animate);
 				obj.rotation.y -= 0.05;
-				renderer.render( cena, cam );
+				renderer.render(cena, cam);
 			}
 			animate();
         </script>
