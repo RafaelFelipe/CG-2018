@@ -17,24 +17,56 @@
         <script src="js/DDSLoader.js"></script>
         
         <!-- Shaders -->
-        <script type="x-shader/x-vertex" id="vertexshader">
+	
+	<!-- Shader do objeto Pumba -->
+        <script type="x-shader/x-vertex" id="vertexshaderPumba">
             void main(){
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
             }
         </script>
 
-        <script type="x-shader/x-fragment" id="fragmentshader">
+        <script type="x-shader/x-fragment" id="fragmentshaderPumba">
             void main(){
                 gl_FragColor = vec4(0.6,0.0,0.0,1.0);
             }
         </script>
         
+	<!-- Shader do objeto KingdomKey -->
+        <script type="x-shader/x-vertex" id="vertexshaderKingdomKey">
+            uniform mat4 trans;
+            
+            void main(){
+                gl_Position = projectionMatrix * viewMatrix * trans * vec4(position,1.0);
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" id="fragmentshaderKingdomKey">
+            void main(){
+                gl_FragColor = vec4(1.0,1.0,0.0,1.0);
+            }
+        </script>
+        
         <!-- Configurações de Cena e Renderização -->
         <script>
+	    
+	    <!-- Definição da matriz de transformação de objeto (translação * escala) -->
+	    uniforms = {
+                trans: {value: new THREE.Matrix4().set(50, 0, 0, -100,
+                                                       0, 50, 0, 20,
+                                                       0, 0, 50, 0,
+                                                       0, 0, 0, 1)}
+            };
+		
             //Chamada dos shaders explícitos
-            var shaderMaterial = new THREE.ShaderMaterial({
-                vertexShader:   document.getElementById('vertexshader').textContent,
-                fragmentShader: document.getElementById('fragmentshader').textContent,
+            var materialPumba = new THREE.ShaderMaterial({
+                vertexShader:   document.getElementById('vertexshaderPumba').textContent,
+                fragmentShader: document.getElementById('fragmentshaderPumba').textContent,
+            });
+            
+            var materialKey = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader:   document.getElementById('vertexshaderKingdomKey').textContent,
+                fragmentShader: document.getElementById('fragmentshaderKingdomKey').textContent,
             });
             
             // ------------- CENA -------------
@@ -137,11 +169,11 @@
             
             //Animação de rotação sobre o eixo y
             function animate() {
-				requestAnimationFrame(animate);
-				Pumba.rotation.y -= 0.05;
-				renderer.render(cena, cam);
-			}
-			animate();
+		requestAnimationFrame(animate);
+		Pumba.rotation.y -= 0.05;
+		renderer.render(cena, cam);
+	    }
+	    animate();
         </script>
     </body>
 </html>
