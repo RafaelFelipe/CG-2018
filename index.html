@@ -75,7 +75,7 @@
             cena.add(cam);
             
             // ------------ OBJETO -------------
-            var obj;
+            var Pumba;
             
             THREE.Loader.Handlers.add(/\.dds$/i, new THREE.DDSLoader());
             
@@ -92,17 +92,33 @@
                 objLoader.load("pumba.obj", function(object){
                     
                     //Configura a posição e escala do objeto
-                    object.position.x = -10;
+                    object.position.x = 150;
                     object.position.y = 10;
                     object.position.z = -50;
                     object.scale.x = 50;
                     object.scale.y = 50;
                     object.scale.z = 50;
-                    obj = object;
+                    Pumba = object;
 
                     cena.add(object);
                 });
             });
+		
+	    var Key;
+
+            var objLoader = new THREE.OBJLoader();
+            objLoader.setPath('Objetos/');
+            objLoader.load("Keyblade_KH_Final.obj", function(object){
+            	object.traverse(function (child) {
+                    if(child instanceof THREE.Mesh) {
+                        child.material = materialKey;
+                    }
+                })
+                Key = object;
+
+                cena.add(object);
+            });
+
 
             // ------------ RENDERER ------------
             
@@ -122,7 +138,7 @@
             //Animação de rotação sobre o eixo y
             function animate() {
 				requestAnimationFrame(animate);
-				obj.rotation.y -= 0.05;
+				Pumba.rotation.y -= 0.05;
 				renderer.render(cena, cam);
 			}
 			animate();
