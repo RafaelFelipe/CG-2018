@@ -72,6 +72,8 @@
 	    var windowHalfX = window.innerWidth / 2;
    	    var windowHalfY = window.innerHeight / 2;
 
+	    var camXDef = 0, camYDef = 0; //Valores de posição padrão de câmera
+		
 	    //Variáveis de instância para cada objeto carregado e configurado
             var moon, farmer, potato, uranito, asteroid, sun;
             
@@ -132,6 +134,46 @@
             
             //Cria uma nova cena
             var cena = new THREE.Scene();
+		
+	    // ------------- ILUMINAÇÃO -------------
+            
+            //Configuração de iluminação ambiente
+            var ilumCena = new THREE.AmbientLight(0xdddddd, 0.5);
+            
+            //Configuração de ponto de luz (Sol)
+            var lightPoint = new THREE.PointLight(0xff6500, 0.7, 1000);
+            lightPoint.position.set(150, -150, 400);
+            
+            //Adição das iluminações
+            cena.add(ilumCena);
+            cena.add(lightPoint);
+            
+            // ------------- CÂMERAS -------------            
+            var cam;
+            
+            //Configuração da câmera padrão
+            var defaultCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 1000);
+            defaultCam.position.z = 450;
+
+            //Configuração da câmera posicionada na lua
+            var backCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 3000);
+            backCam.position.z = -400;
+
+            cam = defaultCam;
+            
+            //Função utilizada para trocar a câmera
+            function keyManager(event){
+		if (event.keyCode == 49) {
+		    cam = defaultCam;
+                    camXDef = 0;
+                    camYDef = 0;
+                }
+		else if (event.keyCode == 50) {
+	 	    cam = backCam;
+                    camXDef = 100;
+                    camYDef = 50;
+                }
+	     }
 		
 	     // ------------ CURVAS --------------
             
@@ -286,8 +328,7 @@
             
             load_objects();
 		
-	     // ------------ MOUSE ---------------
-            
+	    // ------------ MOUSE ---------------
             //Calcula os valores x e y para a posição do ponteiro do mouse
             function onMouseMove(event) {
 		mouseX = (event.clientX - windowHalfX)/2;
@@ -295,6 +336,7 @@
 	    }
             
             // ------------ EVENTS LISTENERS -----
+	    window.addEventListener('keydown', keyManager);
             document.addEventListener('mousemove', onMouseMove, false);
             
 	    // ------------ RENDERER ------------
@@ -320,8 +362,16 @@
                 
                 if(pointArc == 0) index_curves = (index_curves+1) % 2;
 		    
+		//Movimentação da câmera de acordo com o mouse
+                cam.position.x += ((mouseX - cam.position.x) + camXDef) * .03;
+		cam.position.y += ((-mouseY - cam.position.y) + camYDef) * .03;
+
+		cam.lookAt(cena.position);
+
+		renderer.render(cena, cam);
+		    
 	    }
-            
+		
             //Renderiza a cena
             function animate() {
 		requestAnimationFrame(animate);
