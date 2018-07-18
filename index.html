@@ -61,7 +61,17 @@
             }
         </script>
         
+	<!-- Configurações de Cena e Renderização -->
 	<script>
+	     //Variáveis que definem a trajetória do objeto moon ao longo das curvas de bezier
+            var pointArc = 0;
+            var index_curves = 0;
+            var length_curve;
+            
+            var mouseX = 0, mouseY = 0; //Variáveis para modificar a posição da câmera de acordo com o movimento do mouse
+	    var windowHalfX = window.innerWidth / 2;
+   	    var windowHalfY = window.innerHeight / 2;
+
 	    //Variáveis de instância para cada objeto carregado e configurado
             var moon, farmer, potato, uranito, asteroid, sun;
             
@@ -122,6 +132,14 @@
             
             //Cria uma nova cena
             var cena = new THREE.Scene();
+		
+	     // ------------ CURVAS --------------
+            
+            //Definição das curvas de bézier traçando uma trajetória eliptica
+            var curves = [
+                new THREE.CubicBezierCurve3(new THREE.Vector3(130, 40, 0), new THREE.Vector3(130, 160, 0), new THREE.Vector3(-130, 160, 0), new THREE.Vector3(-130, 40, 0)),
+                new THREE.CubicBezierCurve3(new THREE.Vector3(-130, 40, 0), new THREE.Vector3(-130, -120, 0), new THREE.Vector3(130, -120, 0), new THREE.Vector3(130, 40, 0))
+            ];
 	
 	    // ------------ OBJETOS -------------
             
@@ -268,6 +286,48 @@
             
             load_objects();
 		
+	     // ------------ MOUSE ---------------
+            
+            //Calcula os valores x e y para a posição do ponteiro do mouse
+            function onMouseMove(event) {
+		mouseX = (event.clientX - windowHalfX)/2;
+		mouseY = (event.clientY - windowHalfY)/2;
+	    }
+            
+            // ------------ EVENTS LISTENERS -----
+            document.addEventListener('mousemove', onMouseMove, false);
+            
+	    // ------------ RENDERER ------------
+            
+            //Configuração do renderer do OpenGL
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize(WIDTH, HEIGHT);
+            
+            //Captura o elemento do HTML onde será inserida a cena
+            var scene = document.getElementById("cena");
+            
+            //Adiciona o renderer ao elemento HTML
+            scene.appendChild(renderer.domElement);
+            
+            function render() {
+                
+                //Movimentação do objeto moon de acordo com as curvas de Bézier
+                length_curve = Math.floor(curves[index_curves].getLength());
+                
+                moon.position.set(curves[index_curves].getPointAt(pointArc/length_curve).x, curves[index_curves].getPointAt(pointArc/length_curve).y, curves[index_curves].getPointAt(pointArc/length_curve).z);
+                
+                pointArc = ((pointArc+0.5) % length_curve);
+                
+                if(pointArc == 0) index_curves = (index_curves+1) % 2;
+		    
+	    }
+            
+            //Renderiza a cena
+            function animate() {
+		requestAnimationFrame(animate);
+		render();
+	    }
+	    animate();
 	</script>
 	    
     </body>
