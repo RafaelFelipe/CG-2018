@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
     <head>
-        <title>Teste - Pumba</title>
+        <title>Uranito's Universe</title>
         <meta charset="utf-8">
         
         <style>
@@ -16,57 +16,102 @@
         <script src="js/MTLLoader.js"></script>
         <script src="js/DDSLoader.js"></script>
         
-        <!-- Shaders -->
-	
-	<!-- Shader do objeto Pumba -->
-        <script type="x-shader/x-vertex" id="vertexshaderPumba">
-            void main(){
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-            }
-        </script>
-
-        <script type="x-shader/x-fragment" id="fragmentshaderPumba">
-            void main(){
-                gl_FragColor = vec4(0.6,0.0,0.0,1.0);
-            }
-        </script>
-        
-	<!-- Shader do objeto KingdomKey -->
-        <script type="x-shader/x-vertex" id="vertexshaderKingdomKey">
+	<!-- Shaders -->
+        <!-- Shaders do objeto Asteroid -->
+        <script type="x-shader/x-vertex" id="vertexshaderAsteroid">
             uniform mat4 trans;
+            varying vec2 vUv;
             
             void main(){
+                vUv = uv;
+            
                 gl_Position = projectionMatrix * viewMatrix * trans * vec4(position,1.0);
             }
         </script>
 
-        <script type="x-shader/x-fragment" id="fragmentshaderKingdomKey">
+        <script type="x-shader/x-fragment" id="fragmentshaderAsteroid">
+            uniform sampler2D texture;
+            varying vec2 vUv;
+        
             void main(){
-                gl_FragColor = vec4(1.0,1.0,0.0,1.0);
+                vec4 mapText = texture2D(texture, 3.0 * vUv);
+                gl_FragColor = mapText;
             }
         </script>
         
-        <!-- Configurações de Cena e Renderização -->
-        <script>
-	    
-	    <!-- Definição da matriz de transformação de objeto (translação * escala) -->
-	    uniforms = {
-                trans: {value: new THREE.Matrix4().set(50, 0, 0, -100,
-                                                       0, 50, 0, 20,
-                                                       0, 0, 50, 0,
-                                                       0, 0, 0, 1)}
+        <!-- Shaders do objeto Sun -->
+        <script type="x-shader/x-vertex" id="vertexshaderSun">
+            uniform mat4 trans1;
+            varying vec2 vUv;
+            
+            void main(){
+                vUv = uv;
+            
+                gl_Position = projectionMatrix * viewMatrix * trans1 * vec4(position,1.0);
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" id="fragmentshaderSun">
+            uniform sampler2D texture1;
+            varying vec2 vUv;
+        
+            void main(){
+                vec4 mapText = texture2D(texture1, vUv);
+                gl_FragColor = mapText;
+            }
+        </script>
+        
+	<script>
+	    //Variáveis de instância para cada objeto carregado e configurado
+            var moon, farmer, potato, uranito, asteroid, sun;
+            
+            /* ----- TEXTURAS ----- */
+            
+            //Configuração da textura do objeto Asteroid
+            var astText = new THREE.TextureLoader().load('Objetos/Asteroid/textures/rock_texture.png');
+                astText.wrapS = THREE.RepeatWrapping;
+                astText.wrapT = THREE.RepeatWrapping;
+                astText.repeat.set(10,10);
+            
+            //Configuração da textura do objeto Sun
+            var sunText = new THREE.TextureLoader().load('Objetos/Sun/textures/sun.jpg');
+                sunText.wrapS = THREE.RepeatWrapping;
+                sunText.wrapT = THREE.RepeatWrapping;
+                sunText.repeat.set(4,4);
+            
+            /* ----- UNIFORMES (matriz de tranformação e textura) ----- */
+            
+            //Asteroid
+            uniforms1 = {
+                trans: {value: new THREE.Matrix4().set(2, 0, 0, -400,
+                                                       0, 2, 0, 0,
+                                                       0, 0, 2, 500,
+                                                       0, 0, 0, 1)},
+                texture: {type: 't', value: astText}
+               
             };
-		
-            //Chamada dos shaders explícitos
-            var materialPumba = new THREE.ShaderMaterial({
-                vertexShader:   document.getElementById('vertexshaderPumba').textContent,
-                fragmentShader: document.getElementById('fragmentshaderPumba').textContent,
+            
+            //Sun
+            uniforms2 = {
+                trans1: {value: new THREE.Matrix4().set(150, 0, 0, 100,
+                                                       0, 150, 0, -150,
+                                                       0, 0, 150, 500,
+                                                       0, 0, 0, 1)},
+                texture1: {type: 't', value: sunText}
+               
+            };
+
+            //Chamada dos shaders explícitos com passagem da matriz de tranformação
+            var materialAsteroid = new THREE.ShaderMaterial({
+                uniforms: uniforms1,
+                vertexShader: document.getElementById('vertexshaderAsteroid').textContent,
+                fragmentShader: document.getElementById('fragmentshaderAsteroid').textContent,
             });
             
-            var materialKey = new THREE.ShaderMaterial({
-                uniforms: uniforms,
-                vertexShader:   document.getElementById('vertexshaderKingdomKey').textContent,
-                fragmentShader: document.getElementById('fragmentshaderKingdomKey').textContent,
+            var materialSun = new THREE.ShaderMaterial({
+                uniforms: uniforms2,
+                vertexShader: document.getElementById('vertexshaderSun').textContent,
+                fragmentShader: document.getElementById('fragmentshaderSun').textContent,
             });
             
             // ------------- CENA -------------
@@ -77,103 +122,153 @@
             
             //Cria uma nova cena
             var cena = new THREE.Scene();
+	
+	    // ------------ OBJETOS -------------
+            
+            //Carregamento dos objetos utilizados na cena
+            function load_objects() {
+                
+                //Carrega o DDSLoader
+                THREE.Loader.Handlers.add(/\.dds$/i, new THREE.DDSLoader());
+                
+                var mtlLoader; //Variável para carregamento do MTLLoader, que carrega o arquivo .mtl (mapeamento de textura no objeto)
+                var objLoader; //Variável para carregamento do OBJLoader, responsável por carregar o objeto para a cena
+                   
+                /* ----- ASTEROIDE ----- */
+                
+                //Carregamento do objeto para a cena
+                objLoader = new THREE.OBJLoader();
+                objLoader.setPath('Objetos/Asteroid/source/');
+                objLoader.load("asteroid.obj", function(object){
 
-            //Iluminação da cena
-            var ilumCena = new THREE.AmbientLight(0xbbbbbb, 0.4);
-            cena.add(ilumCena);
-            
-            cena.background = new THREE.Color(0xf0f0f0);
-            
-            //Configuração de câmera
-            var VIEW_ANGLE = 45,
-                ASPECT = WIDTH / HEIGHT,
-                NEAR = 1,
-                FAR = 1000;
-            var cam = new THREE.PerspectiveCamera(
-                      VIEW_ANGLE,
-                      ASPECT,
-                      NEAR,
-                      FAR);
-            
-            //Adiciona ponto de luz na câmera
-            var ilumCam = new THREE.PointLight(0xffffff, 0.7);
-            cam.add (ilumCam);
-            cam.lookAt(cena.position);
-            
-            //A câmera começa em 0,0,0. Posiciona a câmera em uma certa profundidade
-            cam.position.z = 300;
-            
-            //Adiciona a câmera à cena
-            cena.add(cam);
-            
-            // ------------ OBJETO -------------
-            var Pumba;
-            
-            THREE.Loader.Handlers.add(/\.dds$/i, new THREE.DDSLoader());
-            
-            //Instancia um objeto para carregar o arquivo .obj
-            var mtlLoader = new THREE.MTLLoader();
-            mtlLoader.setPath('Objetos/Pumba/');
-            mtlLoader.load("pumba.mtl", function(materials) {
-
-                materials.preload();
-                //Carrega o objeto para a cena
-                var objLoader = new THREE.OBJLoader();
-                objLoader.setMaterials(materials);
-                objLoader.setPath('Objetos/Pumba/');
-                objLoader.load("pumba.obj", function(object){
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material = materialAsteroid;
+                        }
+                    });
                     
-                    //Configura a posição e escala do objeto
-                    object.position.x = 150;
-                    object.position.y = 10;
-                    object.position.z = -50;
-                    object.scale.x = 50;
-                    object.scale.y = 50;
-                    object.scale.z = 50;
-                    Pumba = object;
+                    asteroid = object;
+                    
+                    cena.add(object);
+                });
+                
+                /* ----- SUN ----- */
+                
+                //Carregamento do objeto para a cena
+                objLoader = new THREE.OBJLoader();
+                objLoader.setPath('Objetos/Sun/source/');
+                objLoader.load("sun.obj", function(object){
+
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material = materialSun;
+                        }
+                    });
+                    
+                    sun = object;
+                    
+                    cena.add(object);
+                });
+                
+                
+                /* ----- MOON ----- */
+                mtlLoader = new THREE.MTLLoader();
+                mtlLoader.setPath('Objetos/Moon/source/');
+                mtlLoader.load("moon.mtl", function(materials) {
+
+                    materials.preload();
+                    
+                    //Carregamento do objeto para a cena
+                    objLoader = new THREE.OBJLoader();
+                    objLoader.setMaterials(materials);
+                    objLoader.setPath('Objetos/Moon/source/');
+                    objLoader.load("moon.obj", function(object){
+
+                        //Configuração de posição, escala e rotaçaõ do objeto
+                        object.position.set(170, 130, -300);
+                        object.scale.set(0.01, 0.01, 0.01);
+                        object.rotation.set(0, 0.7, 2);
+                        
+                        moon = object;
+
+                        cena.add(object);
+                    });
+                }); 
+
+                /* ----- FARMER ----- */
+                mtlLoader = new THREE.MTLLoader();
+                mtlLoader.setPath('Objetos/Farmer/source/');
+                mtlLoader.load("farmer.blend.obj.mtl", function(materials) {
+
+                    materials.preload();
+                    
+                    //Carregamento do objeto para a cena
+                    objLoader = new THREE.OBJLoader();
+                    objLoader.setMaterials(materials);
+                    objLoader.setPath('Objetos/Farmer/source/');
+                    objLoader.load("farmer.blend.obj", function(object){
+
+                        //Configuração a posição e escala do objeto
+                        object.position.set (0, 75, 0);
+                        object.scale.set (0.01, 0.01, 0.01);
+                        
+                        farmer = object;
+
+                        cena.add(object);
+                    });
+                });
+
+                /* ----- POTATO ----- */
+                mtlLoader = new THREE.MTLLoader();
+                mtlLoader.setPath('Objetos/Potato/source/');
+                mtlLoader.load("mutant_breathing_idle.obj.mtl", function(materials) {
+
+                    materials.preload();
+                    
+                    //Carregamento do objeto para a cena
+                    objLoader = new THREE.OBJLoader();
+                    objLoader.setMaterials(materials);
+                    objLoader.setPath('Objetos/Potato/source/');
+                    objLoader.load("mutant_breathing_idle.obj", function(object){
+
+                        //Configura a posição e escala do objeto
+                        object.position.set (0, 75, -5);
+                        object.scale.set (0.3, 0.3, 0.3);
+                        object.rotation.set (0, 1.5, 0);
+                        
+                        potato = object;
+
+                        cena.add(object);
+                    });
+                });
+
+                /* ----- URANITO ----- */
+                //Instanciação de um novo phong material, cuja cor e luz estão especificadas
+                var phong = new THREE.MeshPhongMaterial({color: 0x88aacc, specular: 0x333333});
+                
+                //Carregamento do objeto para a cena
+                objLoader = new THREE.OBJLoader();
+                objLoader.setPath('Objetos/Uranito/source/');
+                objLoader.load("uranito.c4d.obj", function(object){
+                    
+                    //Aplicação do phong material definido anteriormente
+                    object.traverse(function (child) {
+                        if(child instanceof THREE.Mesh) {
+                         child.material = phong;
+                        }
+                    })
+                    
+                    object.position.y = -50;
+                    
+                    uranito = object;
 
                     cena.add(object);
                 });
-            });
+            }
+            
+            load_objects();
 		
-	    var Key;
-
-            var objLoader = new THREE.OBJLoader();
-            objLoader.setPath('Objetos/');
-            objLoader.load("Keyblade_KH_Final.obj", function(object){
-            	object.traverse(function (child) {
-                    if(child instanceof THREE.Mesh) {
-                        child.material = materialKey;
-                    }
-                })
-                Key = object;
-
-                cena.add(object);
-            });
-
-
-            // ------------ RENDERER ------------
-            
-            //Renderer do OpenGL
-            var renderer = new THREE.WebGLRenderer();
-            renderer.setSize(WIDTH, HEIGHT);
-            
-            //Captura o elemento do HTML onde será inserida a cena
-            var scene = document.getElementById("cena");
-            
-            //Adiciona o renderer ao elemento HTML
-            scene.appendChild(renderer.domElement);
-            
-            //Renderiza a cena
-            renderer.render(cena, cam);
-            
-            //Animação de rotação sobre o eixo y
-            function animate() {
-		requestAnimationFrame(animate);
-		Pumba.rotation.y -= 0.05;
-		renderer.render(cena, cam);
-	    }
-	    animate();
-        </script>
+	</script>
+	    
     </body>
 </html>
