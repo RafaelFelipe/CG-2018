@@ -63,10 +63,11 @@
         
 	<!-- Configurações de Cena e Renderização -->
 	<script>
-	     //Variáveis que definem a trajetória do objeto moon ao longo das curvas de bezier
-            var pointArc = 0;
-            var index_curves = 0;
-            var length_curve;
+	    // Variaveis usadas para camera e lua            
+            //Variáveis que definem a trajetória do objeto moon(moon_*) e da câmera(cam_*) posicionada neste objeto ao longo das curvas de Bézier
+            var moon_pointArc = 0, cam_pointArc = 50;
+            var moon_index_curves = 0, cam_index_curves = 0;
+            var moon_curve_length, cam_curve_length;
             
             var mouseX = 0, mouseY = 0; //Variáveis para modificar a posição da câmera de acordo com o movimento do mouse
 	    var windowHalfX = window.innerWidth / 2;
@@ -91,6 +92,13 @@
                 sunText.wrapT = THREE.RepeatWrapping;
                 sunText.repeat.set(4,4);
             
+	    //Configuração da textura do objeto Cactus
+            var cactusText = new THREE.TextureLoader().load('Objetos/Cactus/textures/Mat_Color.png');
+                cactusText.wrapS = THREE.RepeatWrapping;
+                cactusText.wrapT = THREE.RepeatWrapping;
+                cactusText.repeat.set(1,1);	
+		
+		
             /* ----- UNIFORMES (matriz de tranformação e textura) ----- */
             
             //Asteroid
@@ -159,6 +167,11 @@
             var backCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 3000);
             backCam.position.z = -400;
 
+	    // Camera da lua - RAFAEL            
+            //Configuração da câmera posicionada na lua (objeto moon)
+            var moonCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 2000);
+            moonCam.position.z = -300;	
+		
             cam = defaultCam;
             
             //Função utilizada para trocar a câmera
@@ -301,6 +314,59 @@
                         cena.add(object);
                     });
                 });
+		    
+		// Carregaento cactus
+                /* ----- CACTUS ----- */
+                //Carregamento do objeto para a cena
+                objLoader = new THREE.OBJLoader();
+                objLoader.setPath('Objetos/Cactus/source/');
+                objLoader.load("cactus.obj", function(object){
+
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material.map = cactusText;
+                            child.material.needsUpdate = true;
+                        }
+                    });
+
+                    //Configura a posição, escala e rotação do objeto
+                    object.position.set(465, -40, -200);
+                    object.scale.set (0.15, 0.15, 0.15);
+                    object.rotation.z = -0.8;
+                    cena.add(object);
+                });
+                
+                objLoader.load("cactus.obj", function(object){
+
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material.map = cactusText;
+                            child.material.needsUpdate = true;
+                        }
+                    });
+
+                    //Configura a posição, escala e rotação do objeto
+                    object.position.set(380, -130, -120);
+                    object.scale.set (0.15, 0.15, 0.15);
+                    object.rotation.x = 1.5;
+                    cena.add(object);
+                });
+                
+                objLoader.load("cactus.obj", function(object){
+
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material.map = cactusText;
+                            child.material.needsUpdate = true;
+                        }
+                    });
+
+                    //Configura a posição, escala e rotação do objeto
+                    object.position.set(315, -100, -200);
+                    object.scale.set (0.15, 0.15, 0.15);
+                    object.rotation.z = 1.5;
+                    cena.add(object);
+                });    
 
                 /* ----- URANITO ----- */
                 //Instanciação de um novo phong material, cuja cor e luz estão especificadas
@@ -352,24 +418,47 @@
             scene.appendChild(renderer.domElement);
             
             function render() {
+                // Configurações de posição lua e camera da lua
+                //Ponto na curva de Bézier
+                var moon_vec = [curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).x,
+                                curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).y,
+                                curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).z];
+
+                var cam_vec = [curves[cam_index_curves].getPointAt(cam_pointArc/cam_curve_length).x,
+                               curves[cam_index_curves].getPointAt(cam_pointArc/cam_curve_length).y,
+                               curves[cam_index_curves].getPointAt(cam_pointArc/cam_curve_length).z];
                 
                 //Movimentação do objeto moon de acordo com as curvas de Bézier
-                length_curve = Math.floor(curves[index_curves].getLength());
+                moon_curve_length = Math.floor(curves[moon_index_curves].getLength());
+                cam_curve_length = Math.floor(curves[cam_index_curves].getLength());
                 
-                moon.position.set(curves[index_curves].getPointAt(pointArc/length_curve).x, curves[index_curves].getPointAt(pointArc/length_curve).y, curves[index_curves].getPointAt(pointArc/length_curve).z);
-                
-                pointArc = ((pointArc+0.5) % length_curve);
-                
-                if(pointArc == 0) index_curves = (index_curves+1) % 2;
+                //Movimenta a lua ao longo da curva de bézier
+                moon.position.set(moon_vec[0], moon_vec[1], moon_vec[2]);
+            
 		    
-		//Movimentação da câmera de acordo com o mouse
-                cam.position.x += ((mouseX - cam.position.x) + camXDef) * .03;
-		cam.position.y += ((-mouseY - cam.position.y) + camYDef) * .03;
+		// Análise das trocas de câmera
+		if (cam == moonCam) {
+                    //Movimenta a câmera de acordo com o movimento da curva de Bézier(movimentação da Lua)
+                    cam.position.set(cam_vec[0], cam_vec[1], cam_vec[2]);
+                    
+                    cam.lookAt(0,60,0);
+                } else if (cam != astroCam) {
+                    //Movimentação da câmera de acordo com o mouse
+                    cam.position.x += ((mouseX - cam.position.x) + camXDef) * .03;
+                    cam.position.y += ((-mouseY - cam.position.y) + camYDef) * .03;
+                    
+                    cam.lookAt(cena.position);
+                } else {
+                    cam.lookAt(astronaut.position);
+                }
+                
+                moon_pointArc = ((moon_pointArc+0.5) % moon_curve_length);
+                cam_pointArc = ((cam_pointArc+0.5) % cam_curve_length);
+                
+                if(moon_pointArc == 0) moon_index_curves = (moon_index_curves+1) % 2;
+                if(cam_pointArc == 0) cam_index_curves = (cam_index_curves+1) % 2;
 
-		cam.lookAt(cena.position);
-
-		renderer.render(cena, cam);
-		    
+				renderer.render(cena, cam);
 	    }
 		
             //Renderiza a cena
