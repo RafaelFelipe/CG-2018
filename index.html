@@ -12,9 +12,9 @@
         <div id="cena"></div>
         
         <script src="js/three.js"></script>
-		<script src="js/inflate.min.js"></script>
+	<script src="js/inflate.min.js"></script>
         <script src="js/OBJLoader.js"></script>
-		<script src="js/FBXLoader.js"></script>
+	<script src="js/FBXLoader.js"></script>
         <script src="js/MTLLoader.js"></script>
         <script src="js/DDSLoader.js"></script>
         
@@ -93,12 +93,12 @@
             var moon_curve_length, cam_curve_length;
             
             var mouseX = 0, mouseY = 0; //Variáveis para modificar a posição da câmera de acordo com o movimento do mouse
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
+	    var windowHalfX = window.innerWidth / 2;
+	    var windowHalfY = window.innerHeight / 2;
 
-			var camXDef = 0, camYDef = 0; //Valores de posição padrão de câmera
+	    var camXDef = 0, camYDef = 0; //Valores de posição padrão de câmera
 
-			var angle = 0; //Variável utilizada para movimentar o astronauta e sua câmera (astroCam)
+	    var angle = 0; //Variável utilizada para movimentar o astronauta e sua câmera (astroCam)
 
 			//Variáveis de instância para cada objeto carregado e configurado
             var moon, farmer, potato, uranito, asteroid, astronaut, cactus;
@@ -180,7 +180,7 @@
                 fragmentShader: document.getElementById('fragmentshaderSun').textContent,
             });
 		
-			var materialPlanet = new THREE.ShaderMaterial({
+	    var materialPlanet = new THREE.ShaderMaterial({
                 uniforms: uniforms3,
                 vertexShader: document.getElementById('vertexshaderPlanet').textContent,
                 fragmentShader: document.getElementById('fragmentshaderPlanet').textContent,
@@ -212,7 +212,7 @@
             var cam;
             
             //Configuração da câmera padrão
-            var defaultCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 1000);
+            var defaultCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 2000);
             defaultCam.position.z = 450;
 
             //Configuração da câmera posicionada na lua
@@ -586,8 +586,8 @@
             scene.appendChild(renderer.domElement);
             
             function render() {
-				//Ponto na curva de Bézier
-				var moon_vec = [curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).x,
+		//Ponto na curva de Bézier
+		var moon_vec = [curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).x,
 								curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).y,
 								curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).z];
 
@@ -643,14 +643,13 @@
 		
             //Renderiza a cena
             function animate() {
-				//Deixa objeto estático enquanto o usuário não move-lo (quando a movimentação estiver habilitada)
+		requestAnimationFrame(animate);
+		//Deixa objeto estático enquanto o usuário não move-lo (quando a movimentação estiver habilitada)
                 if(cam != astroCam) {
                     delta = clock.getDelta();
                     astronaut.mixer.update(delta);
-                }
-				
-				requestAnimationFrame(animate);
-				render();
+                }		
+		render();
 	    	}
 	    	animate();
 		</script>
