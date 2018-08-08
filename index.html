@@ -12,11 +12,13 @@
         <div id="cena"></div>
         
         <script src="js/three.js"></script>
+		<script src="js/inflate.min.js"></script>
         <script src="js/OBJLoader.js"></script>
+		<script src="js/FBXLoader.js"></script>
         <script src="js/MTLLoader.js"></script>
         <script src="js/DDSLoader.js"></script>
         
-	<!-- Shaders -->
+		<!-- Shaders -->
         <!-- Shaders do objeto Asteroid -->
         <script type="x-shader/x-vertex" id="vertexshaderAsteroid">
             uniform mat4 trans;
@@ -61,7 +63,7 @@
             }
         </script>
 	    
-	<!-- Shaders do objeto Planet -->
+		<!-- Shaders do objeto Planet -->
         <script type="x-shader/x-vertex" id="vertexshaderPlanet">
             uniform mat4 trans2;
             varying vec2 vUv;
@@ -83,22 +85,23 @@
             }
         </script>
         
-	<!-- Configurações de Cena e Renderização -->
-	<script>
-	    // Variaveis usadas para camera e lua            
-            //Variáveis que definem a trajetória do objeto moon(moon_*) e da câmera(cam_*) posicionada neste objeto ao longo das curvas de Bézier
+		<!-- Configurações de Cena e Renderização -->
+		<script>
+	        //Variáveis que definem a trajetória do objeto moon(moon_*) e da câmera(cam_*) posicionada neste objeto ao longo das curvas de Bézier
             var moon_pointArc = 0, cam_pointArc = 50;
             var moon_index_curves = 0, cam_index_curves = 0;
             var moon_curve_length, cam_curve_length;
             
             var mouseX = 0, mouseY = 0; //Variáveis para modificar a posição da câmera de acordo com o movimento do mouse
-	    var windowHalfX = window.innerWidth / 2;
-   	    var windowHalfY = window.innerHeight / 2;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
 
-	    var camXDef = 0, camYDef = 0; //Valores de posição padrão de câmera
-		
-	    //Variáveis de instância para cada objeto carregado e configurado
-            var moon, farmer, potato, uranito, asteroid, sun;
+			var camXDef = 0, camYDef = 0; //Valores de posição padrão de câmera
+
+			var angle = 0; //Variável utilizada para movimentar o astronauta e sua câmera (astroCam)
+
+			//Variáveis de instância para cada objeto carregado e configurado
+            var moon, farmer, potato, uranito, asteroid, astronaut, cactus;
             
             /* ----- TEXTURAS ----- */
             
@@ -119,7 +122,18 @@
                 plaText.wrapS = THREE.RepeatWrapping;
                 plaText.wrapT = THREE.RepeatWrapping;
                 plaText.repeat.set(1,1);	
+			
+			//Configuração da textura do objeto Astronaut
+            var astrText = new THREE.TextureLoader().load('Objetos/moon-walk/textures/suit_DIFF2.png');
+                astrText.wrapS = THREE.RepeatWrapping;
+                astrText.wrapT = THREE.RepeatWrapping;
+                astrText.repeat.set(1,1);
 		
+			//Configuração da textura do objeto Cactus
+            var cactusText = new THREE.TextureLoader().load('Objetos/Cactus/textures/Mat_Color.png');
+                cactusText.wrapS = THREE.RepeatWrapping;
+                cactusText.wrapT = THREE.RepeatWrapping;
+                cactusText.repeat.set(1,1);
 		
             /* ----- UNIFORMES (matriz de tranformação e textura) ----- */
             
@@ -143,7 +157,7 @@
                
             };
             
-	    //Planet
+	    	//Planet
             uniforms3 = {
                 trans2: {value: new THREE.Matrix4().set(1, 0, 0, 400,
                                                        0, 1, 0, -100,
@@ -181,7 +195,7 @@
             //Cria uma nova cena
             var cena = new THREE.Scene();
 		
-	    // ------------- ILUMINAÇÃO -------------
+	    	// ------------- ILUMINAÇÃO -------------
             
             //Configuração de iluminação ambiente
             var ilumCena = new THREE.AmbientLight(0xdddddd, 0.5);
@@ -204,11 +218,15 @@
             //Configuração da câmera posicionada na lua
             var backCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 3000);
             backCam.position.z = -400;
-
-	    // Camera da lua - RAFAEL            
+		
             //Configuração da câmera posicionada na lua (objeto moon)
             var moonCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 2000);
-            moonCam.position.z = -300;	
+            moonCam.position.z = -300;
+		
+			//Configuração da câmera posicionada no objeto planet, com foco no objeto astronaut
+            var astroCam = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 2000);
+            astroCam.position.set (550, -10, -200);
+            astroCam.lookAt(400, -10, -200);
 		
             cam = defaultCam;
 		
@@ -284,22 +302,36 @@
                     }
                 }
             }
-            
-            //Função utilizada para trocar a câmera
-            function keyManager(event){
-		if (event.keyCode == 49) {
-		    cam = defaultCam;
-                    camXDef = 0;
-                    camYDef = 0;
-                }
-		else if (event.keyCode == 50) {
-	 	    cam = backCam;
-                    camXDef = 100;
-                    camYDef = 50;
-                }
-	     }
 		
-	     // ------------ CURVAS --------------
+			//Função para movimentação do astronauta
+            function moveAstronaut(key) {
+                if (cam == astroCam) {
+                    //Movimenta o astronauta
+                    astronaut.position.set(
+                        400,
+                        (Math.cos(angle) * 90) - 100,
+                        (Math.sin(angle) * 90) - 200                      
+                    );
+
+                    //Movimenta a câmera observando o astronauta
+                    cam.position.set(
+                        cam.position.x,
+                        (Math.cos(angle) * 90) - 100,
+                        (Math.sin(angle) * 90) - 200
+                    );
+
+                    //Rotaciona o astronauta de acordo com a curvatura do planeta
+                    astronaut.rotation.x += Math.PI / (2 * Math.PI * 167);
+                    
+                    //Anima o objeto apenas quando w for clicado
+                    delta += 0.00002;
+                    astronaut.mixer.update(delta);
+                    
+                    angle += 0.003;
+                }
+            }
+		
+	     	// ------------ CURVAS --------------
             
             //Definição das curvas de bézier traçando uma trajetória eliptica
             var curves = [
@@ -307,8 +339,11 @@
                 new THREE.CubicBezierCurve3(new THREE.Vector3(-130, 40, 0), new THREE.Vector3(-130, -120, 0), new THREE.Vector3(130, -120, 0), new THREE.Vector3(130, 40, 0))
             ];
 	
-	    // ------------ OBJETOS -------------
-            
+		    // ------------ OBJETOS -------------
+        	//Utilizados para a animação do objeto Astronaut
+            var clock = new THREE.Clock();
+            var delta;    
+		
             //Carregamento dos objetos utilizados na cena
             function load_objects() {
                 
@@ -317,7 +352,8 @@
                 
                 var mtlLoader; //Variável para carregamento do MTLLoader, que carrega o arquivo .mtl (mapeamento de textura no objeto)
                 var objLoader; //Variável para carregamento do OBJLoader, responsável por carregar o objeto para a cena
-                   
+                var fbxLoader; //Variável para carregamento do FBXLoader, responsável por carregar objetos .fbx para a cena
+				
                 /* ----- ASTEROIDE ----- */
                 
                 //Carregamento do objeto para a cena
@@ -421,7 +457,6 @@
                     });
                 });
 		    
-		// Carregaento cactus
                 /* ----- CACTUS ----- */
                 //Carregamento do objeto para a cena
                 objLoader = new THREE.OBJLoader();
@@ -496,22 +531,49 @@
 
                     cena.add(object);
                 });
+				
+				/* ----- ASTRONAUT ----- */
+                fbxLoader = new THREE.FBXLoader();
+				fbxLoader.load('Objetos/moon-walk/source/suit2.fbx', function (object) {
+                    
+                    //Carrega as animações definidas para o objeto
+					object.mixer = new THREE.AnimationMixer(object);
+					
+                    //Executa a animação escolhida
+					var action = object.mixer.clipAction(object.animations[1]);
+					action.play();
+                    
+                    //Mapeia textura no objeto carregado
+                    object.traverse(function (child) {
+                        if (child instanceof THREE.Mesh){
+                            child.material.map = astrText;
+                            child.material.needsUpdate = true;
+                        }
+                    });
+
+                    object.scale.set(0.03, 0.03, 0.03);
+                    object.position.set(400, -10, -200);
+                    
+                    astronaut = object;
+                    
+					cena.add(object);
+				});
             }
             
             load_objects();
 		
-	    // ------------ MOUSE ---------------
+	   		// ------------ MOUSE ---------------
             //Calcula os valores x e y para a posição do ponteiro do mouse
             function onMouseMove(event) {
-		mouseX = (event.clientX - windowHalfX)/2;
-		mouseY = (event.clientY - windowHalfY)/2;
-	    }
+				mouseX = (event.clientX - windowHalfX)/2;
+				mouseY = (event.clientY - windowHalfY)/2;
+	    	}
             
             // ------------ EVENTS LISTENERS -----
-	    window.addEventListener('keydown', keyManager);
+	    	window.addEventListener('keydown', keyManager);
             document.addEventListener('mousemove', onMouseMove, false);
             
-	    // ------------ RENDERER ------------
+	 	    // ------------ RENDERER ------------
             
             //Configuração do renderer do OpenGL
             var renderer = new THREE.WebGLRenderer();
@@ -524,11 +586,10 @@
             scene.appendChild(renderer.domElement);
             
             function render() {
-                // Configurações de posição lua e camera da lua
-                //Ponto na curva de Bézier
-                var moon_vec = [curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).x,
-                                curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).y,
-                                curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).z];
+				//Ponto na curva de Bézier
+				var moon_vec = [curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).x,
+								curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).y,
+								curves[moon_index_curves].getPointAt(moon_pointArc/moon_curve_length).z];
 
                 var cam_vec = [curves[cam_index_curves].getPointAt(cam_pointArc/cam_curve_length).x,
                                curves[cam_index_curves].getPointAt(cam_pointArc/cam_curve_length).y,
@@ -540,10 +601,23 @@
                 
                 //Movimenta a lua ao longo da curva de bézier
                 moon.position.set(moon_vec[0], moon_vec[1], moon_vec[2]);
-            
+            	
+				//Animação do astronauta caso a cena não esteja focada nele
+                if (cam != astroCam) {
+                    //Movimenta o astronauta
+                    astronaut.position.set(
+                        400,
+                        (Math.cos(angle) * 90) - 100,
+                        (Math.sin(angle) * 90) - 200
+                    );
+                    
+                    //Rotaciona o astronauta de acordo com a curvatura do planeta
+                    astronaut.rotation.x += Math.PI / (2 * Math.PI * 167);
+                    
+                    angle += 0.003;
+                }
 		    
-		// Análise das trocas de câmera
-		if (cam == moonCam) {
+				if (cam == moonCam) {
                     //Movimenta a câmera de acordo com o movimento da curva de Bézier(movimentação da Lua)
                     cam.position.set(cam_vec[0], cam_vec[1], cam_vec[2]);
                     
@@ -565,15 +639,20 @@
                 if(cam_pointArc == 0) cam_index_curves = (cam_index_curves+1) % 2;
 
 				renderer.render(cena, cam);
-	    }
+	    	}
 		
             //Renderiza a cena
             function animate() {
-		requestAnimationFrame(animate);
-		render();
-	    }
-	    animate();
-	</script>
-	    
+				//Deixa objeto estático enquanto o usuário não move-lo (quando a movimentação estiver habilitada)
+                if(cam != astroCam) {
+                    delta = clock.getDelta();
+                    astronaut.mixer.update(delta);
+                }
+				
+				requestAnimationFrame(animate);
+				render();
+	    	}
+	    	animate();
+		</script>
     </body>
 </html>
