@@ -60,6 +60,28 @@
                 gl_FragColor = mapText;
             }
         </script>
+	    
+	<!-- Shaders do objeto Planet -->
+        <script type="x-shader/x-vertex" id="vertexshaderPlanet">
+            uniform mat4 trans2;
+            varying vec2 vUv;
+            
+            void main(){
+                vUv = uv;
+            
+                gl_Position = projectionMatrix * viewMatrix * trans2 * vec4(position,1.0);
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" id="fragmentshaderPlanet">
+            uniform sampler2D texture2;
+            varying vec2 vUv;
+        
+            void main(){
+                vec4 mapText = texture2D(texture2, vUv);
+                gl_FragColor = mapText;
+            }
+        </script>
         
 	<!-- Configurações de Cena e Renderização -->
 	<script>
@@ -81,22 +103,22 @@
             /* ----- TEXTURAS ----- */
             
             //Configuração da textura do objeto Asteroid
-            var astText = new THREE.TextureLoader().load('Objetos/Asteroid/textures/rock_texture.png');
+            var astText = new THREE.TextureLoader().load('Objetos/Asteroid/textures/asteroid.jpg');
                 astText.wrapS = THREE.RepeatWrapping;
                 astText.wrapT = THREE.RepeatWrapping;
-                astText.repeat.set(10,10);
+                astText.repeat.set(5,5);
             
             //Configuração da textura do objeto Sun
             var sunText = new THREE.TextureLoader().load('Objetos/Sun/textures/sun.jpg');
                 sunText.wrapS = THREE.RepeatWrapping;
                 sunText.wrapT = THREE.RepeatWrapping;
-                sunText.repeat.set(4,4);
+                sunText.repeat.set(1,1);
             
-	    //Configuração da textura do objeto Cactus
-            var cactusText = new THREE.TextureLoader().load('Objetos/Cactus/textures/Mat_Color.png');
-                cactusText.wrapS = THREE.RepeatWrapping;
-                cactusText.wrapT = THREE.RepeatWrapping;
-                cactusText.repeat.set(1,1);	
+			//Configuração da textura do objeto Planet
+            var plaText = new THREE.TextureLoader().load('Objetos/Planet/textures/sand.jpg');
+                plaText.wrapS = THREE.RepeatWrapping;
+                plaText.wrapT = THREE.RepeatWrapping;
+                plaText.repeat.set(1,1);	
 		
 		
             /* ----- UNIFORMES (matriz de tranformação e textura) ----- */
@@ -113,11 +135,21 @@
             
             //Sun
             uniforms2 = {
-                trans1: {value: new THREE.Matrix4().set(150, 0, 0, 100,
-                                                       0, 150, 0, -150,
-                                                       0, 0, 150, 500,
+                trans1: {value: new THREE.Matrix4().set(1, 0, 0, 100,
+                                                       0, 1, 0, -150,
+                                                       0, 0, 1, 600,
                                                        0, 0, 0, 1)},
                 texture1: {type: 't', value: sunText}
+               
+            };
+            
+	    //Planet
+            uniforms3 = {
+                trans2: {value: new THREE.Matrix4().set(1, 0, 0, 400,
+                                                       0, 1, 0, -100,
+                                                       0, 0, 1, -200,
+                                                       0, 0, 0, 1)},
+                texture2: {type: 't', value: plaText}
                
             };
 
@@ -132,6 +164,12 @@
                 uniforms: uniforms2,
                 vertexShader: document.getElementById('vertexshaderSun').textContent,
                 fragmentShader: document.getElementById('fragmentshaderSun').textContent,
+            });
+		
+			var materialPlanet = new THREE.ShaderMaterial({
+                uniforms: uniforms3,
+                vertexShader: document.getElementById('vertexshaderPlanet').textContent,
+                fragmentShader: document.getElementById('fragmentshaderPlanet').textContent,
             });
             
             // ------------- CENA -------------
@@ -173,6 +211,79 @@
             moonCam.position.z = -300;	
 		
             cam = defaultCam;
+		
+			//Função gerenciamento da câmera
+            function keyManager(event){
+                switch (event.keyCode) {
+                    case 49:    //Tecla 1
+                    case 50:    //Tecla 2
+                    case 51:    //Tecla 3
+                    case 52:    //Tecla 4
+                        changeCam(event.keyCode);
+                        break;
+                    case 61:    //Tecla +
+                    case 173:   //Tecla -
+                        applyzoom(event.keyCode);
+                        break;
+                    case 87:    //Tecla W
+                        moveAstronaut(event.keyCode);
+                        break;
+                }
+			}
+            
+            //Função para troca de câmeras
+            function changeCam(key) {
+                //Troca de câmera
+				if (key == 49) {        // Tecla 1
+					if(cam != defaultCam)
+                        defaultCam.position.z = 450;
+                    
+                    cam = defaultCam;
+                    camXDef = 0;
+                    camYDef = 0;
+                } else if (key == 50) { // Tecla 2
+					if(cam != backCam)
+                        backCam.position.z = -400;
+                    
+                    cam = backCam;
+                    camXDef = 100;
+                    camYDef = 50;
+                } else if (key == 51) { // Tecla 3
+                    cam = moonCam;
+                } else if (key == 52) { // Tecla 4
+                    if(cam != astroCam)
+                        astroCam.position.x = 550;
+                    
+                    astroCam.position.y = astronaut.position.y;
+                    astroCam.position.z = astronaut.position.z;
+                    cam = astroCam;
+                }
+            }
+            
+            //Função para Zoom in e Zoom out
+            function applyzoom(key) {
+                //Zoom in (+)
+                if (key == 61) {
+                    if (cam == defaultCam && cam.position.z > 200) {
+                        cam.position.z -= 5;
+                    } else if (cam == backCam && cam.position.z < -200) {
+                        cam.position.z += 5;
+                    } else if (cam == astroCam && cam.position.x > 550) {
+                        cam.position.x -= 5;
+                    }
+                }
+                
+                //Zoom out (-)
+                else if (key == 173) {
+                    if (cam == defaultCam && cam.position.z < 1300) {
+                        cam.position.z += 5;
+                    } else if (cam == backCam && cam.position.z > -1000) {
+                        cam.position.z -= 5;
+                    } else if (cam == astroCam && cam.position.x < 1000) {
+                        cam.position.x += 5;
+                    }
+                }
+            }
             
             //Função utilizada para trocar a câmera
             function keyManager(event){
@@ -225,24 +336,19 @@
                     cena.add(object);
                 });
                 
+                /* ----- PLANET ----- */
+				
+				var planet = new THREE.SphereGeometry(90, 100, 100);
+				var sphere = new THREE.Mesh(planet, materialPlanet);
+                sphere.frustumCulled = false;
+				cena.add(sphere);
+                
                 /* ----- SUN ----- */
                 
-                //Carregamento do objeto para a cena
-                objLoader = new THREE.OBJLoader();
-                objLoader.setPath('Objetos/Sun/source/');
-                objLoader.load("sun.obj", function(object){
-
-                    object.traverse(function (child) {
-                        if (child instanceof THREE.Mesh) {
-                            child.material = materialSun;
-                        }
-                    });
-                    
-                    sun = object;
-                    
-                    cena.add(object);
-                });
-                
+                var sun = new THREE.SphereGeometry(200, 100, 100);
+				var sunSphere = new THREE.Mesh(sun, materialSun);
+                sunSphere.frustumCulled = false;
+				cena.add(sunSphere);
                 
                 /* ----- MOON ----- */
                 mtlLoader = new THREE.MTLLoader();
@@ -282,7 +388,7 @@
                     objLoader.load("farmer.blend.obj", function(object){
 
                         //Configuração a posição e escala do objeto
-                        object.position.set (0, 75, 0);
+                        object.position.set (0, 76, 5);
                         object.scale.set (0.01, 0.01, 0.01);
                         
                         farmer = object;
@@ -305,7 +411,7 @@
                     objLoader.load("mutant_breathing_idle.obj", function(object){
 
                         //Configura a posição e escala do objeto
-                        object.position.set (0, 75, -5);
+                        object.position.set (0, 76, -5);
                         object.scale.set (0.3, 0.3, 0.3);
                         object.rotation.set (0, 1.5, 0);
                         
